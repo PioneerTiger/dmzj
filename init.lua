@@ -1,4 +1,4 @@
-package.path = package.path .. ';./lua/plugins/ddv/?.lua;./lua/plugins/ddv/?/init.lua'
+package.path = package.path .. ';./lua/plugins/dmzj/?.lua;./lua/plugins/dmzj/?/init.lua'
 
 local plugin_utils = require "common.utils"
 local http = require "tf_api.http"
