@@ -1,4 +1,9 @@
-package.path = package.path .. ';./lua/plugins/dmzj/?.lua;./lua/plugins/dmzj/?/init.lua'
+local plugin_dir = dart_utils.plugin_dir()
+
+package.path = package.path
+    .. ';'
+    .. './' .. plugin_dir .. '/dmzj/?.lua;'
+    .. './' .. plugin_dir .. '/dmzj/?/init.lua'
 
 local plugin_utils = require "common.utils"
 local http = require "tf_api.http"
