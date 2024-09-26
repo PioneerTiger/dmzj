@@ -1,4 +1,5 @@
 local plugin_dir = dart_utils.plugin_dir()
+local debug = require "tf_api.debug"
 
 package.path = package.path
     .. ';'
@@ -29,20 +30,31 @@ function M.gallery(act)
         query = query,
     })
 
+
     local rets = {}
 
     if response.code ~= 200 then
+        print('response.code', response.code)
         return rets
     end
 
     local data = dart_json.decode(response.content)
+
     for _, tag in ipairs(data) do
         if tag.data ~= nil then
             for _, item in ipairs(tag.data) do
+                local comic_id
+                if item.obj_id ~= nil then
+                    comic_id = tostring(item.obj_id)
+                else
+                    comic_id = tostring(item.id)
+                end
+
                 table.insert(rets, {
                     title = item.title,
                     cover = item.cover,
-                    extra = item
+                    extra = item,
+                    comic_id = tostring(comic_id),
                 })
             end
         end
@@ -52,29 +64,33 @@ function M.gallery(act)
 end
 
 function M.get_detail(act)
-    -- print('act', debug.debug_table(act))
     local url = 'https://v4api.'
         .. 'idmzj.com'
         .. '/comic/detail/'
-        .. tostring(act.payload.extra.obj_id)
+        .. tostring(act.payload.comic_id)
         .. '?uid=2665531'
 
     local response = http.get(url, {
         responseType = 'plain'
     })
+
+    if response.code ~= 200 then
+        print('error response', response.code)
+        return {}
+    end
+
     -- print('response', response)
     -- print('response.content', debug.debug_table(response))
     local dec_bytes = dart_crypto.base64decode(response.content)
     local plain = dart_crypto.rsa_decrypt(const.private_key, dec_bytes)
     local detail = dart_pb.decode("ComicDetailResponseProto", plain)
     detail = detail.data
-    -- print('detail', debug.debug_table(detail, 10))
     local chapters = {}
 
     for _, chapter in ipairs(detail.chapters) do
         for _, cp in ipairs(chapter.data) do
             table.insert(chapters, {
-                id = cp.chapterId,
+                id = tostring(cp.chapterId),
                 title = cp.chapterTitle,
             })
         end
@@ -82,8 +98,9 @@ function M.get_detail(act)
 
     return {
         title = detail.title,
+        cover = detail.cover,
         chapters = chapters,
-        id = detail.id,
+        id = tostring(detail.id),
         extra = detail,
     }
 end
@@ -104,7 +121,7 @@ function M.chapter_detail(act)
     local plain = dart_crypto.rsa_decrypt(const.private_key, dec_bytes)
     local detail = dart_pb.decode("ComicChapterResponseProto", plain)
     detail = detail.data
-    print('detail', debug.debug_table(detail, 10))
+    -- print('detail', debug.debug_table(detail, 10))
 
     local images = {}
     for _, img in ipairs(detail.pageUrlHD) do
@@ -114,6 +131,16 @@ function M.chapter_detail(act)
     return {
         images = images,
         extra = detail,
+    }
+end
+
+function M.download_image(act)
+    local url = act.payload.url
+    local path = act.payload.downloadPath
+    local response = http.download(url, path)
+
+    return {
+        code = response.code,
     }
 end
 
