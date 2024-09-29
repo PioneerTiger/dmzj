@@ -35,7 +35,10 @@ function M.gallery(act)
 
     if response.code ~= 200 then
         print('response.code', response.code)
-        return rets
+        return {
+            success = false,
+            data = rets
+        }
     end
 
     local data = dart_json.decode(response.content)
@@ -54,13 +57,17 @@ function M.gallery(act)
                     title = item.title,
                     cover = item.cover,
                     extra = item,
-                    comic_id = tostring(comic_id),
+                    comic_id = comic_id,
                 })
             end
         end
     end
 
-    return rets
+    -- print('rets', debug.debug_table(rets))
+    return {
+        success = true,
+        data = rets
+    }
 end
 
 function M.get_detail(act)
@@ -141,6 +148,49 @@ function M.download_image(act)
 
     return {
         code = response.code,
+    }
+end
+
+function M.search(act)
+    -- /search/show/0/$keyword/$page.json
+    local url = 'https://nnv3api.'
+        .. 'idmzj.com'
+        .. '/search/show/0/'
+        .. tostring(act.payload.keyword)
+        .. '/'
+        .. tostring(act.payload.page)
+        .. '.json'
+
+    local response = http.get(url, {})
+    if response.code ~= 200 then
+        print('error response', response.code)
+        return {
+            success = false,
+            data = {}
+        }
+    end
+
+    local data = dart_json.decode(response.content)
+    local rets = {}
+    for _, item in ipairs(data) do
+        local comic_id
+        if item.obj_id ~= nil then
+            comic_id = tostring(item.obj_id)
+        else
+            comic_id = tostring(item.id)
+        end
+
+        table.insert(rets, {
+            title = item.title,
+            cover = item.cover,
+            extra = item,
+            comic_id = comic_id,
+        })
+    end
+
+    return {
+        success = true,
+        data = rets
     }
 end
 
