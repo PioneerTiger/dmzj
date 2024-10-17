@@ -22,6 +22,13 @@ function M.gallery_test(act)
 end
 
 function M.gallery(act)
+    if act.payload.page ~= 0 then
+        return {
+            success = true,
+            data = {}
+        }
+    end
+
     local query = {
         version = "99.9.9"
     }
